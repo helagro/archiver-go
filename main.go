@@ -34,7 +34,14 @@ func main() {
 }
 
 func getSettings() {
-	data, err := os.ReadFile("settings.yaml")
+	executablePath, err := os.Executable()
+	if err != nil {
+		log.Fatalf("error getting executable path: %v", err)
+	}
+	executableDir := filepath.Dir(executablePath)
+	settingsPath := filepath.Join(executableDir, "settings.yaml")
+
+	data, err := os.ReadFile(settingsPath)
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
