@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"time"
 
 	"gopkg.in/yaml.v2"
 )
@@ -60,6 +61,7 @@ func runRules() {
 		}
 
 		var folder string = filepath.Join(settings.Root, rule.Path)
+		fmt.Println(folder, ":")
 
 		items, err := os.ReadDir(folder)
 
@@ -99,13 +101,12 @@ func isExcluded(folder string, name string) bool {
 
 func oldEnough(item fs.DirEntry, days int) bool {
 	info, err := item.Info()
-
 	if err != nil {
 		log.Fatalf("error getting file info: %v", err)
 	}
 
 	modTime := info.ModTime()
-	limit := modTime.AddDate(0, 0, -days)
+	limit := time.Now().AddDate(0, 0, -days)
 
 	return modTime.Before(limit)
 }
@@ -114,7 +115,7 @@ func deleteFile(folder string, name string) {
 	var oldPath string = filepath.Join(folder, name)
 	var newPath string = filepath.Join(settings.Trash, name)
 
-	fmt.Println(oldPath, " -> ", newPath)
+	fmt.Println("   ", oldPath, " -> ", newPath)
 
 	os.Rename(oldPath, newPath)
 }
