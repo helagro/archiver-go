@@ -72,7 +72,7 @@ func runRules() {
 		for _, item := range items {
 			var matchesRuleRegex bool = r.MatchString(item.Name())
 			var notExcluded bool = !isExcluded(folder, item.Name())
-			var isOldEnough bool = oldEnough(item, rule.Days)
+			var isOldEnough bool = oldEnough(folder, item, rule.Days)
 
 			if matchesRuleRegex && notExcluded && isOldEnough {
 				deleteFile(folder, item.Name())
@@ -99,15 +99,29 @@ func isExcluded(folder string, name string) bool {
 	return false
 }
 
-func oldEnough(item fs.DirEntry, days int) bool {
+func oldEnough(folder string, item fs.DirEntry, days int) bool {
 	info, err := item.Info()
 	if err != nil {
 		log.Fatalf("error getting file info: %v", err)
 	}
 
-	modTime := info.ModTime()
-	limit := time.Now().AddDate(0, 0, -days)
+	if item.IsDir() {
+		path := filepath.Join(folder, item.Name())
+		items, err := os.ReadDir(path)
 
+		if err != nil {
+			return false
+		}
+
+		for _, subItem := range items {
+			if !oldEnough(path, subItem, days) {
+				return false
+			}
+		}
+	}
+
+	limit := time.Now().AddDate(0, 0, -days)
+	modTime := info.ModTime()
 	return modTime.Before(limit)
 }
 
