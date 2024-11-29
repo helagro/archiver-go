@@ -5,8 +5,10 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v2"
@@ -15,6 +17,8 @@ import (
 var (
 	settings Settings
 )
+
+/* -------------------------- TYPES ------------------------- */
 
 type Rule struct {
 	Path    string `yaml:"path"`
@@ -28,6 +32,8 @@ type Settings struct {
 	Root    string   `yaml:"root"`
 	Trash   string   `yaml:"trash"`
 }
+
+/* ------------------------ FUNCTIONS ----------------------- */
 
 func main() {
 	getSettings()
@@ -72,14 +78,18 @@ func runRules() {
 		for _, item := range items {
 			var matchesRuleRegex bool = r.MatchString(item.Name())
 			var notExcluded bool = !isExcluded(folder, item.Name())
+			var noUncommittedChanges bool = !uncommittedChanges(item, folder)
 			var isOldEnough bool = oldEnough(folder, item, rule.Days)
 
-			if matchesRuleRegex && notExcluded && isOldEnough {
+			if matchesRuleRegex && notExcluded && noUncommittedChanges && isOldEnough {
 				deleteFile(folder, item.Name())
+				// fmt.Println("   ", item.Name())
 			}
 		}
 	}
 }
+
+/* ---------------------- DELETE TESTS ---------------------- */
 
 func isExcluded(folder string, name string) bool {
 	var path string = filepath.Join(folder, name)
@@ -97,6 +107,29 @@ func isExcluded(folder string, name string) bool {
 	}
 
 	return false
+}
+
+func uncommittedChanges(item fs.DirEntry, folder string) bool {
+	if !item.IsDir() {
+		return false
+	}
+
+	dirPath := filepath.Join(folder, item.Name())
+	if err := os.Chdir(dirPath); err != nil {
+		fmt.Println("    WARNING: ", dirPath, " - ", err)
+		return true
+	}
+	defer os.Chdir("..")
+
+	cmd := exec.Command("git", "status", "--porcelain")
+	output, err := cmd.Output()
+
+	if err != nil {
+		fmt.Println("    WARNING: ", dirPath, " - ", err)
+		return true
+	}
+
+	return strings.TrimSpace(string(output)) != ""
 }
 
 func oldEnough(folder string, item fs.DirEntry, days int) bool {
@@ -124,6 +157,8 @@ func oldEnough(folder string, item fs.DirEntry, days int) bool {
 	modTime := info.ModTime()
 	return modTime.Before(limit)
 }
+
+/* ---------------------- DELETE ACTIONS ---------------------- */
 
 func deleteFile(folder string, name string) {
 	var oldPath string = filepath.Join(folder, name)
