@@ -1,0 +1,25 @@
+rules:
+  - path: Downloads
+    pattern: .+
+    days: 10
+  - path: Developer
+    pattern: .+
+    days: 28
+  - path: Pictures
+    pattern: .+\.(jpg|png|mov|mp4)
+    days: 28
+  - path: Desktop
+    pattern: .+
+    days: -1
+  - path: vault/tmp
+    pattern: .+
+    days: 60
+  - path: Library/Mobile Documents/com~apple~CloudDocs/temporary
+    pattern: .+
+    days: -1
+exclude:
+  - .*/\.DS_Store
+  - .*/\.localized
+  - .*/Photos Library\.photoslibrary
+root: /Users/h
+trash: /Users/h/.Trash

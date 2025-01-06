@@ -46,7 +46,7 @@ func getSettings() {
 		log.Fatalf("error getting executable path: %v", err)
 	}
 	executableDir := filepath.Dir(executablePath)
-	settingsPath := filepath.Join(executableDir, "settings.yaml")
+	settingsPath := filepath.Join(executableDir, "settings.yml")
 
 	data, err := os.ReadFile(settingsPath)
 	if err != nil {
